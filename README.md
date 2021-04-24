@@ -8,6 +8,13 @@ Revolution IRC Client is the next-generation IRC client for Android, made with d
 <a href="https://play.google.com/store/apps/details?id=io.mrarm.irc" target="_blank">
 <img src="https://play.google.com/intl/en_us/badges/images/generic/en-play-badge.png" alt="Get it on Google Play" height="80"/></a>
 
+Changes in debug versionName 0.5.4c versionCode 15 (plp 20210417):
+
+* The Ignore list entries are now full regexps vs. the previous rather undocumented
+  glob match style accepting just `* ?` wildcards for each of `name user host` in
+  the ignore pattern sets.
+* The new `Message text` pattern is matched against the whole message text line.
+
 This client features a modern Material design as well as many other awesome features:
 
 * Stays in background properly, even on more recent Android versions

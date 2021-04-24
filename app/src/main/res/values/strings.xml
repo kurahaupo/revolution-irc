@@ -662,6 +662,10 @@
 
     <string name="user_info_copied">Copied %s to clipboard.</string>
 
+    <!-- Ignore message text regexp -->
+
+    <string name="mesg_match">Message text</string>
+
     <!-- Color picker -->
 
     <string name="color_picker_title">Pick a color</string>

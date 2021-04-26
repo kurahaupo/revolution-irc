@@ -105,7 +105,7 @@ public class ServerConfigData {
         public boolean matchChannelMessages = true;
         public boolean matchChannelNotices = true;
 
-        public void nullRegexes() {
+        private void nullRegexes() {
             nickRegex = null;
             userRegex = null;
             hostRegex = null;
@@ -113,16 +113,17 @@ public class ServerConfigData {
         }
 
         public void updateRegexes() throws PatternSyntaxException {
-            // several could be bad, invalidate all, catch the 1st and report it, exit early
             nullRegexes();
-            try { if(nick != null) nickRegex = SimpleWildcardPattern.rCopy(nick); }
-            catch(PatternSyntaxException e) {  nullRegexes(); throw e; }
-            try { if(user != null) userRegex = SimpleWildcardPattern.rCopy(user); }
-            catch(PatternSyntaxException e) {  nullRegexes(); throw e; }
-            try { if(host != null) hostRegex = SimpleWildcardPattern.rCopy(host); }
-            catch(PatternSyntaxException e) {  nullRegexes(); throw e; }
-            try { if(mesg != null) mesgRegex = SimpleWildcardPattern.rCopy(mesg); }
-            catch(PatternSyntaxException e) {  nullRegexes(); throw e; }
+            try {
+                if (nick != null) nickRegex = SimpleWildcardPattern.rCopy(nick);
+                if (user != null) userRegex = SimpleWildcardPattern.rCopy(user);
+                if (host != null) hostRegex = SimpleWildcardPattern.rCopy(host);
+                if (mesg != null) mesgRegex = SimpleWildcardPattern.rCopy(mesg);
+            } catch(PatternSyntaxException e) {
+                // null all if any is invalid
+                nullRegexes();
+                throw e;
+            }
         }
 
     }

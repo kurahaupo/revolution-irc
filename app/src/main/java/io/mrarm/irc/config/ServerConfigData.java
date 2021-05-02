@@ -14,6 +14,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import io.mrarm.irc.R;
 import io.mrarm.irc.util.SimpleWildcardPattern;
@@ -92,20 +93,36 @@ public class ServerConfigData {
         public String nick;
         public String user;
         public String host;
+        public String mesg;
         public String comment;
         public transient Pattern nickRegex;
         public transient Pattern userRegex;
         public transient Pattern hostRegex;
+        public transient Pattern mesgRegex;
 
         public boolean matchDirectMessages = true;
         public boolean matchDirectNotices = true;
         public boolean matchChannelMessages = true;
         public boolean matchChannelNotices = true;
 
-        public void updateRegexes() {
-            nickRegex = SimpleWildcardPattern.compile(nick);
-            userRegex = SimpleWildcardPattern.compile(user);
-            hostRegex = SimpleWildcardPattern.compile(host);
+        public void nullRegexes() {
+            nickRegex = null;
+            userRegex = null;
+            hostRegex = null;
+            mesgRegex = null;
+        }
+  
+        public void updateRegexes() throws PatternSyntaxException {
+            nullRegexes();
+            try {
+                if(nick != null) nickRegex = SimpleWildcardPattern.rCopy(nick);
+                if(user != null) userRegex = SimpleWildcardPattern.rCopy(user);
+                if(host != null) hostRegex = SimpleWildcardPattern.rCopy(host);
+                if(mesg != null) mesgRegex = SimpleWildcardPattern.rCopy(mesg);
+            } catch(PatternSyntaxException e) {
+                nullRegexes();
+                throw e;
+            }
         }
 
     }

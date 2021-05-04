@@ -17,37 +17,50 @@ public class IgnoreListMessageFilter implements MessageFilter {
         mConfig = server;
     }
 
+    private static boolean skipIf(String s, Regex r) {
+        if (s == null) return true;     // missing string cannot match
+        if (r == null) return false;    // regex does not constrain this rule
+        return !r.matcher(s);           // skip this rule if it does NOT match
+    }
+
     @Override
     public boolean filter(ServerConnectionData serverConnectionData, String channel, MessageInfo message) {
-        if (mConfig.ignoreList != null && message.getSender() != null) {
-            for (ServerConfigData.IgnoreEntry entry : mConfig.ignoreList) {
-                if (entry.nick == null && entry.user == null && entry.host == null && entry.mesg == null)
-                    continue;
-                if (
-                            (entry.nickRegex == null && entry.nick != null)
-                        ||  (entry.userRegex == null && entry.user != null)
-                        ||  (entry.hostRegex == null && entry.user != null)
-                        ||  (entry.mesgRegex == null && entry.mesg != null)
-                ) {
-                    try {
-                        entry.updateRegexes();
-                    } catch(PatternSyntaxException e) {
-                        // silently ignore error here, must be dealt with in edit ignore screen(s)
-                    }
-                }
-                if (entry.nickRegex == null && entry.userRegex == null && entry.hostRegex == null && entry.mesgRegex == null)
-                    continue; // tried to compile: failed: ignore rule
-                if (entry.nickRegex != null && !entry.nickRegex.matcher(message.getSender().getNick()).matches())
-                    continue;
-                if (entry.userRegex != null && (message.getSender().getUser() == null || !entry.userRegex.matcher(message.getSender().getUser()).matches()))
-                    continue;
-                if (entry.mesgRegex != null && (message.getMessage() == null || !entry.mesgRegex.matcher(message.getMessage()).matches()))
-                    continue;
-                if (entry.hostRegex != null && (message.getSender().getHost() == null || !entry.hostRegex.matcher(message.getSender().getHost()).matches()))
-                    continue;
-                Log.d("IgnoreListMessageFilter", "Ignore message: " + message.getSender().getNick() + " " + message.getMessage());
-                return false;
+        // Always accept messages if there's no list
+        if (mConfig.ignoreList == null) return true;
+        MessagePrefix s = message.getSender();
+        String m = message.getMessage();
+
+        // A message with neither a sender nor a body can't match any rule
+        if (s == null && m == null) return true;
+
+        for (ServerConfigData.IgnoreEntry entry : mConfig.ignoreList) {
+            try {
+                if (!entry.updateRegexes())
+                    continue;   // Regex compilation previously failed, don't try again
+            } catch(PatternSyntaxException e) {
+                // Regex compilation failed, so silently ignore this rule.
+                // (User must deal with it in edit-ignore screen.)
+                continue;
             }
+
+            /* Treat all strings empty as a special case and ignore this rule;
+             * otherwise nothing would be excluded, and this rule would match
+             * (and ignore) every message. You can still create a rule with a
+             * '*' glob or an empty regex if you really want to match
+             * everything. */
+            if (    entry.nick == null && entry.user == null
+                 && entry.host == null && entry.mesg == null)
+                continue;
+
+            if (s!=null) {
+                if (skipIf(s.getNick(), entry.nickRegex)) continue;
+                if (skipIf(s.getUser(), entry.userRegex)) continue;
+                if (skipIf(s.getHost(), entry.hostRegex)) continue;
+            }
+            if (skipIf(m, entry.mesgRegex)) continue;
+
+            Log.d("IgnoreListMessageFilter", "Ignore message: " + s.getNick() + " " + m);
+            return false;
         }
         return true;
     }

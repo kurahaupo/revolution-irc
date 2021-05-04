@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import io.mrarm.irc.R;
-import io.mrarm.irc.util.SimpleWildcardPattern;
 
 public class ServerConfigData {
 
@@ -95,34 +94,44 @@ public class ServerConfigData {
         public String host;
         public String mesg;
         public String comment;
+        public transient boolean compiled = false;
         public transient Pattern nickRegex;
         public transient Pattern userRegex;
         public transient Pattern hostRegex;
         public transient Pattern mesgRegex;
+        private transient boolean valid = false;
 
         public boolean matchDirectMessages = true;
         public boolean matchDirectNotices = true;
         public boolean matchChannelMessages = true;
         public boolean matchChannelNotices = true;
 
-        public void nullRegexes() {
-            nickRegex = null;
-            userRegex = null;
-            hostRegex = null;
-            mesgRegex = null;
-        }
-  
-        public void updateRegexes() throws PatternSyntaxException {
-            nullRegexes();
-            try {
-                if(nick != null) nickRegex = SimpleWildcardPattern.rCopy(nick);
-                if(user != null) userRegex = SimpleWildcardPattern.rCopy(user);
-                if(host != null) hostRegex = SimpleWildcardPattern.rCopy(host);
-                if(mesg != null) mesgRegex = SimpleWildcardPattern.rCopy(mesg);
-            } catch(PatternSyntaxException e) {
-                nullRegexes();
-                throw e;
+        private static Pattern cp(String str) throws PatternSyntaxException {
+            if (str == null || str.isEmpty())
+                return null;
+            if (    str.startsWith("/") && str.endsWith("/")
+                 || str.startsWith("?") && str.endsWith("?")) {
+                int l = str.length();
+                if (l > 2)
+                    return Pattern.compile(str.substr(1,l-1));
+                if (l == 2)
+                    return null;    // treat "//" and "??" as 'match anything'
             }
+            // fall thru if pattern is "/" or "?"
+            return SimpleWildcardPattern.compile(str);
+        }
+
+        public boolean updateRegexes() throws PatternSyntaxException {
+            if (compiled)
+                return valid;
+            compiled = true;
+            valid = false;
+            nickRegex = cp(nick);
+            userRegex = cp(user);
+            hostRegex = cp(host);
+            mesgRegex = cp(mesg);
+            valid = true;
+            return valid;
         }
 
     }

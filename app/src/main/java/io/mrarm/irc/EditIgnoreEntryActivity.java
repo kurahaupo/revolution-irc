@@ -70,6 +70,14 @@ public class EditIgnoreEntryActivity extends ThemedActivity {
         }
     }
 
+    private static String gt(EditText et) {
+        String s = et.getText();
+        // convert empty string to null
+        if (s == null || s.isEmpty())
+            return null;
+        return s;
+    }
+
     public boolean save() {
         if (mEntry == null) {
             mEntry = new ServerConfigData.IgnoreEntry();
@@ -77,21 +85,28 @@ public class EditIgnoreEntryActivity extends ThemedActivity {
                 mServer.ignoreList = new ArrayList<>();
             mServer.ignoreList.add(mEntry);
         }
-        mEntry.nick = mNick.getText().length() > 0 ? mNick.getText().toString() : null;
-        mEntry.user = mUser.getText().length() > 0 ? mUser.getText().toString() : null;
-        mEntry.host = mHost.getText().length() > 0 ? mHost.getText().toString() : null;
-        mEntry.mesg = mMesg.getText().length() > 0 ? mMesg.getText().toString() : null;
-        mEntry.comment = mComment.getText().length() > 0 ? mComment.getText().toString() : null;
+        mEntry.compiled = false;
+        mEntry.nick = gt(mNick);
+        mEntry.user = gt(mUser);
+        mEntry.host = gt(mHost);
+        mEntry.mesg = gt(mMesg);
+        mEntry.comment = gt(mComment);
         mEntry.matchChannelMessages = mChannelMessages.isChecked();
         mEntry.matchChannelNotices = mChannelNotices.isChecked();
         mEntry.matchDirectMessages = mDirectMessages.isChecked();
         mEntry.matchDirectNotices = mDirectNotices.isChecked();
         try {
             mEntry.updateRegexes();
-        } catch(PatternSyntaxException e) { // only this one should be propagated from updateRegexes()
-            Toast.makeText( this,"Regexp pattern error in:\n"
-                    + e.getPattern() + "\n" + e.getMessage(), Toast.LENGTH_LONG).show();
-            // do not fail on return here else user needs to re-enter everything from scratch
+            /* Since mEntry.compiled was false, updateRegexes will throw an
+             * exception rather than return false, so the only possible return
+             * value here is true, which just means continue. */
+        } catch (PatternSyntaxException e) { // only this one should be propagated from updateRegexes()
+            Toast.makeText( this,
+                            "Regexp pattern error in:\n"
+                                  + e.getPattern() + "\n"
+                                  + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+            // do not abort here else user needs to re-enter everything from scratch
         }
         try {
             ServerConfigManager.getInstance(this).saveServer(mServer);

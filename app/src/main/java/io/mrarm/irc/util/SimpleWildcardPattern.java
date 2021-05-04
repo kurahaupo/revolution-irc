@@ -1,7 +1,6 @@
 package io.mrarm.irc.util;
 
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 public class SimpleWildcardPattern {
 
@@ -27,9 +26,5 @@ public class SimpleWildcardPattern {
             ret.append(Pattern.quote(str.substring(pi)));
         ret.append('$');
         return Pattern.compile(ret.toString());
-    }
-
-    public static Pattern rCopy(String str) throws PatternSyntaxException {
-        return Pattern.compile(str);
     }
 }
